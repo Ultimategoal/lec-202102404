@@ -100,6 +100,12 @@
 			}
 		%>
 	</select>
+	
+	<select name="timeZone">
+		<%
+			
+		%>
+	</select>
 </form>
 <%-- <%=Calendar.SUNDAY %> --%>
 <%-- <%=Calendar.MONDAY %> --%>
