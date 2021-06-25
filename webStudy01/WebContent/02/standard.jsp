@@ -1,17 +1,16 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8" trimDirectiveWhitespaces="true"%>
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>02/standara.jsp</title>
-</head>
-<body>
 <h4>JSP (Java Server Page) 표준 구성요소</h4>
 <pre>
 	1. 정적 텍스트(Front-End, Client side) : HTML, JavaScript, CSS
 	2. Back-End, Server side
 	   1) scriptlet : <% // java code %> , 지역 코드화
+	   <%!
+	   public String test(){
+		   return "테스트";
+	   }
+	   
+	   %>
 	   2) expression : <%="출력 데이터" %>
 	   3) directive : <%--@지시자명 --%>
 	   		- page : 현재 jsp 페이지에 대한 설정정보(mime, import, errorPage...)
@@ -47,5 +46,3 @@
 	5. EL(표현언어)
 	6. JSTL(tag library)
 </pre>
-</body>
-</html>

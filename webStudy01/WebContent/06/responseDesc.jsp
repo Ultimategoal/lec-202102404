@@ -38,7 +38,8 @@
 			<a href="cacheControl.jsp">캐시 제어 예제</a>
 		* Refresh : auto request
 			<a href="autoRequest.jsp">Refresh를 통한 자동 요청</a>
-		* Location
+		* Location : 페이지 이동
+			<a href="">페이지 이동 예제</a>
 	3. Response Body
 </pre>
 <img src="<%=request.getContextPath() %>/resources/images/2.jpg">

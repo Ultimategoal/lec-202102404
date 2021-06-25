@@ -8,10 +8,9 @@
 <script type="text/javascript" src="<%=request.getContextPath()%>/resources/js/jquery-3.6.0.min.js"></script>
 <script type="text/javascript" src="<%=request.getContextPath()%>/resources/js/custom.js"></script>
 <script type="text/javascript">
-	$.customAlert("메시지");
 	$(function(){
-		let element = $("#timerArea").sessionTimer({
-			<%=session.getMaxInactiveInterval() %>,
+		let element = $("#timerArea").sessionTimer({  
+			timeout:<%=session.getMaxInactiveInterval() %>,
 			url:"<%=request.getContextPath()%>/sessionExtend"
 		});
 		console.log("===================");
@@ -24,17 +23,13 @@
 <h4>세션 타이머</h4>
 <%=session.getId()%> : <%=session.getMaxInactiveInterval() %>
 <h4 id="timerArea"></h4>
-1. 1초마다 출력되는 시간을 디스카운트
-2. 1분 남은 시점에 메시지를 출력.
-   세션 연장 여부를 확인.
-3. 세션 연장을 선택한 경우,
- 1) 타이머 리셋
- 2) 세션 연장을 위한 새로운 요청 발생(비동기- /sessionExtend, body 가 없는 응답)
-  <div id="messageArea">
-  세션을 연장하시겠습니까?<br>
-  	<input type="button" id="yesBtn" value="예">  
-  	<input type="button" id="noBtn" value="아니오">
-  </div>
+<!-- 1. 1초마다 출력되는 시간을 디스카운트 -->
+<!-- 2. 1분 남은 시점에 메시지를 출력. -->
+<!--    세션 연장 여부를 확인. -->
+<!-- 3. 세션 연장을 선택한 경우, -->
+<!--  1) 타이머 리셋 -->
+<!--  2) 세션 연장을 위한 새로운 요청 발생(비동기- /sessionExtend, body 가 없는 응답) -->
+  
 <%-- <script type="text/javascript">
 	let timer = $('#timerArea');
 	let initvalue = 120;
@@ -71,10 +66,5 @@
 		$(":input").css('display','none');
 	})
 </script> --%>
-<style>
-	input[type=button], #messageArea{
-		display : none;
-	}
-</style>
 </body>
 </html>
