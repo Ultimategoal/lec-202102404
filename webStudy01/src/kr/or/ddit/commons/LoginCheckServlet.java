@@ -14,34 +14,40 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.apache.commons.lang3.StringUtils;
+
+import com.sun.xml.internal.ws.message.AttachmentSetImpl;
+
+import kr.or.ddit.member.service.AuthenticateService;
+import kr.or.ddit.member.service.AuthenticateServiceImpl;
+import kr.or.ddit.vo.MemberVO;
+
 
 @WebServlet("/login/loginCheck.do")
 public class LoginCheckServlet extends HttpServlet{
+	private AuthenticateService service = new AuthenticateServiceImpl();
 	
-	private boolean authenticated(String id, String password) {
-		return id.equals(password);
-	}
-	private boolean validate(String id, String password, Map<String, String> errors) {
+	
+	private boolean validate(MemberVO param, Map<String, String> errors) {
 		boolean valid = true;
-		if(id==null || id.isEmpty()) {
+		if(StringUtils.isBlank(param.getMem_id())) {
 			valid = false;
-			if(1==1)
-			throw new UserNotFoundException("사용자가 존재하지 않음.");
 			errors.put("mem_id", "아이디는 필수 입력");
 		}
-		if(password==null || password.isEmpty()) {
+		if(StringUtils.isBlank(param.getMem_pass())) {
 			valid = false;
 			errors.put("mem_pass", "비밀번호는 필수 입력");
-		}else {
-			Pattern regexPtrn = Pattern. compile("^((?=.*[a-z]+)(?=.*[A-Z]+)(?=.*[0-9]+)(?=.*[!@#\\$%\\^\\&\\*]+).{4,8})$");
-			Matcher matcher = regexPtrn.matcher(password);
-			if(!matcher.find()) {
-				valid = false; // false 반환시 패턴이 맞지 않다는걸  의미
-				errors.put("mem_pass", "비밀번호는 영대소문자 숫자 특수문자를 포함한 4~8글자 이내.");
-			}else {
-				System.out.println(matcher.group(1));
-			}
 		}
+//		else {
+//			Pattern regexPtrn = Pattern. compile("^((?=.*[a-z]+)(?=.*[A-Z]+)(?=.*[0-9]+)(?=.*[!@#\\$%\\^\\&\\*]+).{4,8})$");
+//			Matcher matcher = regexPtrn.matcher(param.getMem_pass());
+//			if(!matcher.find()) {
+//				valid = false; // false 반환시 패턴이 맞지 않다는걸  의미
+//				errors.put("mem_pass", "비밀번호는 영대소문자 숫자 특수문자를 포함한 4~8글자 이내.");
+//			}else {
+//				System.out.println(matcher.group(1));
+//			}
+//		}
 		return valid;
 	}
 	
@@ -55,7 +61,11 @@ public class LoginCheckServlet extends HttpServlet{
 		HttpSession session = req.getSession();
 		Map<String, String> errors = new HashMap<>();
 		session.setAttribute("errors", errors);
-		boolean valid = validate(mem_id, mem_pass, errors);
+		MemberVO param = new MemberVO(mem_id, mem_pass);
+		
+		boolean valid = validate(param, errors);
+		
+		MemberVO vo = new MemberVO();
 		
 		String goPage = null;
 		boolean redirect = true;
@@ -67,16 +77,27 @@ public class LoginCheckServlet extends HttpServlet{
 			redirect = true;
 		}else {
 //		3. 인증
-			if(authenticated(mem_id, mem_pass)) {
+			try {
+				Object resultValue = service.authenticate(param);
+				if(resultValue instanceof MemberVO) {
+					System.out.println(param.getMem_name());
 //			1) 성공 : welcome page 로 이동(redirect)
-				goPage = "/";
-				redirect = true;
-				session.setAttribute("authId", mem_id);
-			}else {
+					goPage = "/";
+					redirect = true;
+					// 로그인에 성공하면, 웰컴페이지로 이동해서 성공한 이름을 보여줄것
+					session.setAttribute("authMember", resultValue);
+				}else {
 //			2) 실패 : login form page 로 이동(forward)
+					goPage = "/login/loginForm.jsp";
+					redirect = true;
+					session.setAttribute("failId", mem_id);
+					session.setAttribute("message", "비밀번호 오류");
+				}
+				
+			}catch(UserNotFoundException e){
 				goPage = "/login/loginForm.jsp";
 				redirect = true;
-				session.setAttribute("failId", mem_id);
+				session.setAttribute("message", e.getMessage());
 			}
 		}
 		
