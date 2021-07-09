@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.member.dao.MemberDAO">
+	<select id="selectMemberById" parameterType="string" resultType="MemberVO">
+		select mem_id, mem_pass, mem_name, mem_add1, mem_add2, mem_hp, mem_mail 
+		from member 
+		where mem_id = #{memId} 
+		and mem_delete is null
+	</select>
+	<sql id="searchFrog">
+		<where>
+			<if test="simpleSearch!=null and @org.apache.commons.lang3.StringUtils@isNotBlank(simpleSearch.searchWord)">
+				<choose>
+					<when test="simpleSearch.searchType eq 'name'">
+						INSTR(MEM_NAME, #{simpleSearch.searchWord}) > 0
+					</when>
+					<when test="simpleSearch.searchType eq 'address'">
+						INSTR(MEM_ADD1, #{simpleSearch.searchWord}) > 0
+					</when>
+					<when test="simpleSearch.searchType eq 'hp'">
+						INSTR(MEM_HP, #{simpleSearch.searchWord}) > 0
+					</when>
+					<otherwise>
+						INSTR(MEM_NAME, #{simpleSearch.searchWord}) > 0
+						OR INSTR(MEM_ADD1, #{simpleSearch.searchWord}) > 0
+						OR INSTR(MEM_HP, #{simpleSearch.searchWord}) > 0
+					</otherwise>
+				</choose>
+			</if>
+		</where>
+	</sql>
+	<select id="selectTotalRecord" parameterType="PagingVO" resultType="int">
+		SELECT COUNT(*) 
+		FROM MEMBER
+		<include refid="searchFrog" />
+	</select>
+	
+	<select id="selectMemberList" resultType="MemberVO" parameterType="PagingVO">
+		SELECT B.*
+		FROM (
+			SELECT A.*, ROWNUM RNUM
+			FROM 
+			(
+				SELECT mem_id,  mem_name, mem_add1, 
+					   mem_hp, mem_mail, mem_mileage, 
+					   mem_delete 
+				from member 
+				<include refid="searchFrog" />
+				order by rowid desc
+			) A
+		) B 
+		<![CDATA[
+		WHERE RNUM >= #{startRow} AND RNUM <= #{endRow}
+		]]>
+	</select>
+	
+	<resultMap type="MemberVO" id="memberMap" autoMapping="true">
+		<id property="memId" column="MEM_ID"/>
+		
+		<collection property="prodList" javaType="java.util.Set" ofType="ProdVO" autoMapping="true">
+			<id property="prodId" column="PROD_ID"/>
+			<association property="buyer" autoMapping="true" />
+		</collection>
+	</resultMap>
+	<select id="selectMemberDetail" parameterType="string" resultMap="memberMap">
+		with prodall as(
+			select p.prod_id, p.prod_cost, p.prod_price, l.lprod_nm, b.buyer_name, b.buyer_add1, b.buyer_charger
+			from prod p inner join lprod l on (p.prod_lgu = l.lprod_gu)
+			            inner join buyer b on (p.prod_buyer = b.buyer_id)
+		), cartprod as(
+			    SELECT DISTINCT CART_MEMBER, PRODALL.*
+			    FROM CART INNER JOIN PRODALL ON (CART_PROD = PROD_ID)
+		)
+	
+		SELECT mem_id, mem_pass, mem_name, mem_regno1, mem_regno2, mem_bir, mem_zip, mem_add1, mem_add2, mem_hp, 
+		mem_comtel, mem_hometel, mem_memorial, mem_memorialday, 
+		mem_mail, mem_job, mem_like, mem_mileage, mem_delete, cartprod.* from member LEFT OUTER JOIN CARTPROD ON (MEM_ID = CART_MEMBER) 
+		where mem_id = #{memId}
+	</select>
+	
+	<update id="updateMember" parameterType="MemberVO">
+		UPDATE member 
+		set 
+			mem_name = #{memName},
+			mem_pass = #{memPass}, 
+			mem_zip = #{memZip, jdbcType=VARCHAR},
+			mem_add1 = #{memAdd1, jdbcType=VARCHAR}, 
+			mem_add2 = #{memAdd2, jdbcType=VARCHAR}, 
+			mem_bir = #{memBir, jdbcType=VARCHAR},
+			mem_hometel = #{memHometel, jdbcType=VARCHAR},
+			mem_comtel = #{memComtel, jdbcType=VARCHAR},
+			mem_hp = #{memHp}, 
+			mem_mail = #{memMail}, 
+			mem_job = #{memJob, jdbcType=VARCHAR},
+			mem_like = #{memLike, jdbcType=VARCHAR},
+			mem_memorial = #{memMemorial, jdbcType=VARCHAR},
+			mem_memorialday = to_date(#{memMemorialday, jdbcType=DATE}, 'YYYY-MM-DD')
+			where mem_id = #{memId}
+	</update>
+	
+	<delete id="deleteMember" parameterType="string">
+		UPDATE MEMBER
+		SET
+		MEM_DELETE = '1'
+		WHERE MEM_ID = #{memId}
+	</delete>
+	
+	<insert id="insertMember" parameterType="MemberVO">
+		INSERT INTO MEMBER (MEM_ID, MEM_PASS, MEM_NAME, MEM_REGNO1, MEM_REGNO2, 
+							MEM_BIR, MEM_ZIP, MEM_ADD1, MEM_ADD2, MEM_HOMETEL, MEM_COMTEL, 
+							MEM_HP, MEM_MAIL, MEM_JOB, MEM_LIKE, MEM_MEMORIAL, MEM_MEMORIALDAY)
+		VALUES(#{memId}, #{memPass,jdbcType=VARCHAR},
+						 #{memName,jdbcType=VARCHAR}, 
+						 #{memRegno1,jdbcType=CHAR}, 
+						 #{memRegno2,jdbcType=CHAR}, 
+						 TO_DATE(#{memBir, jdbcType=DATE}, 'YYYY-MM-DD'), 
+						 #{memZip,jdbcType=CHAR}, 
+						 #{memAdd1,jdbcType=VARCHAR}, 
+						 #{memAdd2,jdbcType=VARCHAR}, 
+						 #{memHometel,jdbcType=VARCHAR}, 
+						 #{memComtel,jdbcType=VARCHAR}, 
+						 #{memHp,jdbcType=VARCHAR}, 
+						 #{memMail,jdbcType=VARCHAR}, 
+						 #{memJob,jdbcType=VARCHAR}, 
+						 #{memLike,jdbcType=VARCHAR}, 
+						 #{memMemorial,jdbcType=VARCHAR}, 
+						 TO_DATE(#{memMemorialday, jdbcType=DATE}, 'YYYY-MM-DD'))
+	</insert>
+	
+	<select id="selectCount" resultType="int" parameterType="string">
+		select count(*) from member where mem_id = #{memId}
+	</select>
+	
+	<select id="selectZip" resultType="ZiptbVO">
+		select * from ziptb
+	</select>
+	
+	<select id="selectZipDetail" resultType="ZiptbVO" parameterType="ZiptbVO">
+		select * from ziptb where sido = #{sido} or gugun = #{gugun}
+	</select>
+</mapper>
